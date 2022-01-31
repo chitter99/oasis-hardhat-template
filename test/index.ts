@@ -24,3 +24,37 @@ describe("CoolToken", function () {
 		expect(ethers.utils.parseUnits("1")).to.equal(receiverBalance);
 	});
 });
+
+describe("WrapperCoolToken", function () {
+	let Token: et.ContractFactory, WrapperToken: et.ContractFactory;
+
+	before(async function() {
+		Token = await ethers.getContractFactory("CoolToken");
+		WrapperToken = await ethers.getContractFactory("WrapperCoolToken");
+	});
+
+	it("Deposit should mint wcol and withdraw should burn wcol", async function() {
+		const [owner, receiver] = await ethers.getSigners();
+		const amount = ethers.utils.parseUnits("1");
+		const token = await Token.deploy(amount);
+		const wrapper = await WrapperToken.deploy(token.address);
+
+		// Mint wcol
+		await token.approve(wrapper.address, amount);
+		await wrapper.deposit(amount);
+		
+		expect(amount).to.equal(await wrapper.balanceOf(owner.address));
+		expect(amount).to.equal(await token.balanceOf(wrapper.address));
+		
+		// Transfer wcol to reciver
+		await wrapper.transfer(receiver.address, amount);
+
+		expect(amount).to.equal(await wrapper.balanceOf(receiver.address));
+
+		// Burn wcol
+		await wrapper.connect(receiver).withdraw(amount);
+		
+		expect(0).to.equal(await wrapper.balanceOf(receiver.address));
+		expect(amount).to.equal(await token.balanceOf(receiver.address));
+	});
+});
