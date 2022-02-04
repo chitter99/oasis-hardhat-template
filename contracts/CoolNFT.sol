@@ -36,7 +36,7 @@ contract CoolNFT is ERC721 {
     }
 
     function withdrawTo(uint256 _id, address _to) public returns(bool) {
-        require(_isApprovedOrOwner(_to, _id), "Owner");
+        require(_isApprovedOrOwner(msg.sender, _id), "Owner");
 
         wcol.transfer(_to, _tokenBalances[_id]);
         _burn(_id);
